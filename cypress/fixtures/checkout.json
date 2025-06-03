@@ -1,0 +1,9 @@
+{
+  "addressDetailsTitle": "Address Details",
+  "reviewYourOrderTitle": "Review Your Order",
+  "paymentTitle": "Payment",
+  "orderConfirmationTitle": "Order Placed!",
+  "orderConfirmationMsg": "Congratulations! Your order has been confirmed!",
+  "emptyCartMsg": "Cart is empty!",
+  "loginPageTitle": "Login to your account"
+}
