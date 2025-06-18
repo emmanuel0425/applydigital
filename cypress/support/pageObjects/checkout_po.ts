@@ -1,14 +1,43 @@
 import { Checkout } from '../locators/checkout';
-import { SignUp } from '../locators/signUp';
 import { faker } from '@faker-js/faker';
+import { globalPO } from './global_po';
+import { CardInfo } from '../data/userDataFactory';
 
 class CheckoutPO {
+  randomQuantity: string;
+  cardInfo: CardInfo;
+
+  constructor() {
+    // Properties to store form data for validation
+    this.cardInfo = {
+      fullName: '',
+      creditCardNumber: '',
+      expiryMonth: '',
+      expiryYear: '',
+      cvc: '',
+    };
+    this.randomQuantity = '';
+  }
+
+  /**
+   * @description Generate fake but valid user data for form submission.
+   * @author Emmanuel
+   */
+  generateFakeUserData(): void {
+    this.randomQuantity = faker.number.int({ min: 1, max: 20 }).toString();
+    this.cardInfo.fullName = faker.person.fullName().replace(/[^a-zA-Z0-9 ]/g, '');
+    this.cardInfo.creditCardNumber = faker.finance.creditCardNumber('63[7-9]#-####-####-###L');
+    this.cardInfo.expiryMonth = faker.number.int({ min: 10, max: 12 }).toString();
+    this.cardInfo.expiryYear = this.getRandomYear().toString();
+    this.cardInfo.cvc = faker.finance.creditCardCVV();
+  }
+
   /**
    * @description Click on Products link.
    * @author Emmanuel
    */
   clickOnProductsLink(): void {
-    cy.get(Checkout.NAV_DIV).contains(Checkout.PRODUCTS_LINK).should('be.visible').click();
+    globalPO.clickOnElementByLocatorAndText(Checkout.NAV_DIV, Checkout.PRODUCTS_LINK);
   }
 
   /**
@@ -16,10 +45,7 @@ class CheckoutPO {
    * @author Emmanuel
    */
   clickOnViewProductLink(): void {
-    cy.get(Checkout.PRODUCT_LIST_DIV)
-      .contains(Checkout.VIEW_PRODUCT_LINK)
-      .should('be.visible')
-      .click();
+    globalPO.clickOnElementByLocatorAndText(Checkout.PRODUCT_LIST_DIV, Checkout.VIEW_PRODUCT_LINK);
   }
 
   /**
@@ -27,7 +53,8 @@ class CheckoutPO {
    * @author Emmanuel
    */
   enterRandomQuantity(): void {
-    cy.get(Checkout.ITEM_QUANTITY_TEXTBOX).type(faker.number.int({ min: 1, max: 20 }).toString());
+    this.generateFakeUserData();
+    globalPO.typeIntoField(Checkout.ITEM_QUANTITY_TEXTBOX, this.randomQuantity);
   }
 
   /**
@@ -35,7 +62,7 @@ class CheckoutPO {
    * @author Emmanuel
    */
   clickOnAddToCartButton(): void {
-    cy.contains(Checkout.ADD_TO_CART_BUTTON).should('be.visible').click();
+    globalPO.clickOnElementByText(Checkout.ADD_TO_CART_BUTTON);
   }
 
   /**
@@ -44,7 +71,7 @@ class CheckoutPO {
    */
   clickOnViewCartLink(): void {
     cy.get(Checkout.MODAL_DIV).within(() => {
-      cy.contains(Checkout.VIEW_CART_LINK).should('be.visible').click();
+      globalPO.clickOnElementByText(Checkout.VIEW_CART_LINK);
     });
   }
 
@@ -53,7 +80,7 @@ class CheckoutPO {
    * @author Emmanuel
    */
   clickOnProceedToCheckoutButton(): void {
-    cy.contains(Checkout.PROCEED_TO_CHECKOUT_BUTTON).should('be.visible').click();
+    globalPO.clickOnElementByText(Checkout.PROCEED_TO_CHECKOUT_BUTTON);
   }
 
   /**
@@ -71,7 +98,7 @@ class CheckoutPO {
    * @author Emmanuel
    */
   clickOnCartIcon(): void {
-    cy.get(Checkout.NAV_DIV).contains(Checkout.CART_LINK).should('be.visible').click();
+    globalPO.clickOnElementByLocatorAndText(Checkout.NAV_DIV, Checkout.CART_LINK);
   }
 
   /**
@@ -79,29 +106,26 @@ class CheckoutPO {
    * @author Emmanuel
    */
   verifyTotalIsCorrect(): void {
-    cy.get(Checkout.CART_PRICE).then(($el) => {
-      // Get item price amount
-      const str: string = $el.text();
-      const priceStr: string = str.replace('Rs. ', '');
-      const price: number = parseFloat(priceStr);
-      console.log(price);
-      cy.get(Checkout.CART_QUANTITY).then(($el) => {
-        // Get item price quantity
-        const str: string = $el.text();
-        const quantity: number = parseFloat(str);
-        console.log(quantity);
-        cy.get(Checkout.CART_TOTAL).then(($el) => {
-          // Get item total amount
-          const str: string = $el.text();
-          const totalStr: string = str.replace('Rs. ', '');
-          const total: number = parseFloat(totalStr);
-          console.log(total);
+    cy.get(Checkout.CART_PRICE).as('price');
+    cy.get(Checkout.CART_QUANTITY).as('quantity');
+    cy.get(Checkout.CART_TOTAL).as('total');
 
-          // Assert total amount is correct
-          expect(total).to.eq(price * quantity);
-        });
+    cy.get('@price')
+      .invoke('text')
+      .then((priceText) => {
+        const price = parseFloat(priceText.replace('Rs. ', ''));
+        cy.get('@quantity')
+          .invoke('text')
+          .then((quantityText) => {
+            const quantity = parseFloat(quantityText);
+            cy.get('@total')
+              .invoke('text')
+              .then((totalText) => {
+                const total = parseFloat(totalText.replace('Rs. ', ''));
+                expect(total).to.eq(price * quantity);
+              });
+          });
       });
-    });
   }
 
   /**
@@ -109,14 +133,14 @@ class CheckoutPO {
    * @author Emmanuel
    */
   clickOnPlaceOrderButton(): void {
-    cy.contains(Checkout.PLACE_ORDER_BUTTON).should('be.visible').click();
+    globalPO.clickOnElementByText(Checkout.PLACE_ORDER_BUTTON);
   }
 
   /**
    * @description Get random year.
    * @author Emmanuel
    */
-  getRandomYear(minYear = 2026, maxYear = 2030) {
+  getRandomYear(minYear: number = 2026, maxYear: number = 2030): number {
     const start: Date = new Date(`${minYear}-01-01`);
     const end: Date = new Date(`${maxYear}-12-31`);
     const randomDate: Date = faker.date.between({ from: start, to: end });
@@ -128,15 +152,11 @@ class CheckoutPO {
    * @author Emmanuel
    */
   enterPaymentMandatoryInfo(): void {
-    cy.get(Checkout.NAME_ON_CARD_TEXTBOX).should('be.visible').type(faker.person.fullName());
-    cy.get(Checkout.CARD_NUMBER_TEXTBOX)
-      .should('be.visible')
-      .type(faker.finance.creditCardNumber());
-    cy.get(Checkout.CVC_TEXTBOX).should('be.visible').type(faker.finance.creditCardCVV());
-    cy.get(Checkout.EXPIRY_MONTH_TEXTBOX)
-      .should('be.visible')
-      .type(faker.number.int({ min: 1, max: 12 }).toString());
-    cy.get(Checkout.EXPIRY_YEAR_TEXTBOX).should('be.visible').type(this.getRandomYear().toString());
+    globalPO.typeIntoField(Checkout.NAME_ON_CARD_TEXTBOX, this.cardInfo.fullName);
+    globalPO.typeIntoField(Checkout.CARD_NUMBER_TEXTBOX, this.cardInfo.creditCardNumber);
+    globalPO.typeIntoField(Checkout.CVC_TEXTBOX, this.cardInfo.cvc);
+    globalPO.typeIntoField(Checkout.EXPIRY_MONTH_TEXTBOX, this.cardInfo.expiryMonth);
+    globalPO.typeIntoField(Checkout.EXPIRY_YEAR_TEXTBOX, this.cardInfo.expiryYear);
   }
 
   /**
@@ -144,7 +164,7 @@ class CheckoutPO {
    * @author Emmanuel
    */
   clickOnPayAndConfirmOrderButton(): void {
-    cy.get(Checkout.PAY_BUTTON).should('be.visible').click();
+    globalPO.clickOnElement(Checkout.PAY_BUTTON);
   }
 
   /**
@@ -152,7 +172,7 @@ class CheckoutPO {
    * @author Emmanuel
    */
   clickOnLogOutLink(): void {
-    cy.get(Checkout.NAV_DIV).contains(Checkout.LOGOUT_LINK).should('be.visible').click();
+    globalPO.clickOnElementByLocatorAndText(Checkout.NAV_DIV, Checkout.LOGOUT_LINK);
   }
 }
 

@@ -11,7 +11,7 @@ Feature: Checkout
     Then User clicks on the Register Login link
     When User enters Full Name and Email
     When User clicks on Signup button
-    Then User completes Sign Up mandatory info
+    Then User completes Sign Up mandatory info "<country>"
     When User clicks on the Create Account button
     Then User should land on the Account Created page
     When User clicks on the Continue button
@@ -26,6 +26,10 @@ Feature: Checkout
     Then User should land on the Order Placed page
     When User clicks on the Logout button
     Then User should land on the Login Sign Up page
+
+    Examples:
+      | country       |
+      | United States |
 
 
 

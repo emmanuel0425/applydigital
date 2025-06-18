@@ -3,9 +3,9 @@ import { checkout } from '../support/pageObjects/checkout_po';
 import { signUp } from '../support/pageObjects/signUp_po';
 
 // Mobile View Port
-beforeEach(() => {
-  cy.viewport('iphone-x');
-});
+// beforeEach(() => {
+//   cy.viewport('iphone-x');
+// });
 
 Given('User navigates to the Automation Exercise page', () => {
   cy.visit('/');
@@ -47,8 +47,8 @@ When('User clicks on Signup button', () => {
   signUp.clickOnSignUpButton();
 });
 
-Then('User completes Sign Up mandatory info', () => {
-  signUp.enterSignUpMandatoryInfo();
+Then('User completes Sign Up mandatory info {string}', (country: string) => {
+  signUp.enterSignUpMandatoryInfo(country);
 });
 
 When('User clicks on the Create Account button', () => {
